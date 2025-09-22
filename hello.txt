@@ -1,8 +1,427 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2639
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww28600\viewh15260\viewkind0
-\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Reviewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --background-light: #f4f7f9;
+            --text-dark: #333;
+            --card-bg: #fff;
+            --border-color: #eee;
+        }
 
-\f0\fs24 \cf0 shanmukha sree}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        p {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="file"]:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, opacity 0.3s;
+            margin-top: 15px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Results Display */
+        #results-container {
+            margin-top: 40px;
+            border-top: 2px solid var(--border-color);
+            padding-top: 30px;
+        }
+
+        #score-card {
+            text-align: center;
+            padding: 25px;
+            margin-bottom: 25px;
+            background-color: var(--background-light);
+            border: 1px solid var(--border-color);
+        }
+
+        #match-score {
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--primary-color);
+            transition: color 0.5s;
+        }
+
+        .status-text {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* Status Colors */
+        .status-excellent { color: var(--success-color); }
+        .status-good { color: var(--warning-color); }
+        .status-poor { color: var(--danger-color); }
+
+        /* Feedback Grid */
+        .feedback-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .feedback-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feedback-list li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.95em;
+        }
+
+        .card h4 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--primary-color);
+        }
+
+        .missing-keywords-card h4 {
+            color: var(--danger-color);
+        }
+
+        .keyword-pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .keyword-pill {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .error {
+            color: var(--danger-color);
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Media Query for Responsiveness */
+        @media (max-width: 768px) {
+            .feedback-grid {
+                grid-template-columns: 1fr;
+            }
+            .full-width {
+                grid-column: span 1;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Resume & Job Match Reviewer</h1>
+        <p>Upload your resume and paste the job description to get an instant ATS compatibility score and expert feedback.</p>
+
+        <form id="review-form">
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="resume-file">1. Upload Resume (PDF or DOCX):</label>
+                    <input type="file" id="resume-file" name="resume" accept=".pdf,.docx" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="job-description">2. Paste Job Description:</label>
+                    <textarea id="job-description" name="job_description" rows="10" placeholder="Paste the full job description here (required skills, responsibilities, etc.)..." required></textarea>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">
+                <span id="button-text">🚀 Analyze Resume</span>
+                <span id="spinner" class="hidden">Analyzing... Please wait.</span>
+            </button>
+        </form>
+
+        <div id="error-message" class="hidden error"></div>
+
+        <div id="results-container" class="hidden">
+            <h2>AI Analysis Report</h2>
+            
+            <div id="score-card" class="card">
+                <h3>Match Score: <span id="match-score"></span>/100</h3>
+                <p id="score-status" class="status-text"></p>
+            </div>
+
+            <div class="feedback-grid">
+                <div class="card">
+                    <h4>✅ Strengths</h4>
+                    <ul id="strengths-list" class="feedback-list"></ul>
+                </div>
+
+                <div class="card">
+                    <h4>⚠️ Weaknesses (Based on JD)</h4>
+                    <ul id="weaknesses-list" class="feedback-list"></ul>
+                </div>
+                
+                <div class="card full-width">
+                    <h4>💡 Actionable Improvement Suggestions</h4>
+                    <ul id="suggestions-list" class="feedback-list"></ul>
+                </div>
+                
+                <div class="card full-width missing-keywords-card">
+                    <h4>🔑 Missing Keywords (Skills the ATS will look for)</h4>
+                    <p id="missing-keywords-list" class="keyword-pill-container"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // IMPORTANT: Replace this with the URL of your actual backend API endpoint (e.g., Flask or Django server)
+        const API_ENDPOINT = 'http://localhost:5000/review'; 
+
+        // --- DOM ELEMENTS ---
+        const form = document.getElementById('review-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+        const resultsContainer = document.getElementById('results-container');
+        const errorMessage = document.getElementById('error-message');
+        const scoreElement = document.getElementById('match-score');
+        const statusElement = document.getElementById('score-status');
+        const strengthsList = document.getElementById('strengths-list');
+        const weaknessesList = document.getElementById('weaknesses-list');
+        const suggestionsList = document.getElementById('suggestions-list');
+        const keywordsContainer = document.getElementById('missing-keywords-list');
+
+        // --- EVENT LISTENER ---
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+            
+            const formData = new FormData(form);
+
+            if (!formData.get('resume').size) {
+                showError('Please upload a resume file (PDF or DOCX).');
+                return;
+            }
+            
+            setLoadingState(true);
+
+            try {
+                // 1. Send data to the backend API
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    body: formData 
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Server responded with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // 2. Render the Results
+                renderResults(data);
+
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                showError(`Analysis Failed: ${error.message}. Please ensure your backend is running.`);
+            } finally {
+                setLoadingState(false);
+            }
+        });
+
+        // --- HELPER FUNCTIONS ---
+
+        function setLoadingState(isLoading) {
+            submitBtn.disabled = isLoading;
+            buttonText.classList.toggle('hidden', isLoading);
+            spinner.classList.toggle('hidden', !isLoading);
+            resultsContainer.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderResults(data) {
+            const score = data.match_score || 0;
+            
+            // 1. Update Score Card
+            scoreElement.textContent = score;
+
+            let statusText = '';
+            let statusClass = '';
+
+            if (score >= 80) {
+                statusText = 'Excellent Match! The AI recommends moving forward.';
+                statusClass = 'status-excellent';
+                scoreElement.style.color = 'var(--success-color)';
+            } else if (score >= 60) {
+                statusText = 'Good Match. Review suggestions for minor improvements.';
+                statusClass = 'status-good';
+                scoreElement.style.color = 'var(--warning-color)';
+            } else {
+                statusText = 'Needs Work. Significant tailoring is required to pass the ATS.';
+                statusClass = 'status-poor';
+                scoreElement.style.color = 'var(--danger-color)';
+            }
+
+            statusElement.textContent = statusText;
+            statusElement.className = 'status-text'; 
+            statusElement.classList.add(statusClass);
+
+            // 2. Render Lists
+            strengthsList.innerHTML = renderList(data.strengths, '✅');
+            weaknessesList.innerHTML = renderList(data.weaknesses, '⚠️');
+            suggestionsList.innerHTML = renderList(data.improvement_suggestions, '💡');
+
+            // 3. Render Keywords as Pills
+            renderKeywords(data.missing_keywords);
+
+            // 4. Show the results section and scroll
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderList(items, icon) {
+            if (!items || items.length === 0) {
+                return '<li>No specific feedback in this category.</li>';
+            }
+            return items.map(item => `<li>${icon} ${item}</li>`).join('');
+        }
+
+        function renderKeywords(keywords) {
+            keywordsContainer.innerHTML = ''; // Clear previous pills
+            if (!keywords || keywords.length === 0) {
+                keywordsContainer.textContent = 'No critical missing keywords detected. Great job!';
+                keywordsContainer.style.color = 'var(--success-color)';
+                return;
+            }
+            
+            keywords.forEach(keyword => {
+                const pill = document.createElement('span');
+                pill.className = 'keyword-pill';
+                pill.textContent = keyword.trim();
+                keywordsContainer.appendChild(pill);
+            });
+            keywordsContainer.style.color = 'var(--text-dark)'; // Reset color
+        }
+    </script>
+</body>
+</html>
